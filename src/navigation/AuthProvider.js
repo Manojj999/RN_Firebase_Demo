@@ -5,7 +5,7 @@ import {LoginManager, AccessToken} from 'react-native-fbsdk-next';
 //import {useNavigation} from '@react-navigation/native';
 export const AuthContext = createContext();
 
-export const AuthProvider = ({children, navigation}) => {
+export const AuthProvider = ({children}) => {
   const [user, setUser] = useState(null);
   return (
     <AuthContext.Provider

@@ -5,6 +5,9 @@ import {
   StyleSheet,
   Pressable,
   ScrollView,
+  Platform,
+  Alert,
+  Image,
   TouchableOpacity,
 } from 'react-native';
 
@@ -21,17 +24,26 @@ import {emailValidator} from '../../helpers/emailValidator';
 import {passwordValidator} from '../../helpers/passwordValidator';
 import {nameValidator} from '../../helpers/nameValidator';
 import {AuthContext} from '../../navigation/AuthProvider';
+import firestore from '@react-native-firebase/firestore';
+import database from '@react-native-firebase/database';
+import auth from '@react-native-firebase/auth';
+import {launchCamera, launchImageLibrary} from 'react-native-image-picker';
 
 const Registration = ({navigation}) => {
   const [name, setName] = React.useState({value: 'Manoj', error: ''});
+  const [Id, setId] = React.useState();
   const [email, setEmail] = React.useState({
     value: 'jasoliya@m.com',
     error: '',
   });
+
   const [password, setPassword] = React.useState({value: '123', error: ''});
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState();
   const [isNext, setIsNext] = useState(false);
+  const [imageUrl, setImageUrl] = useState('');
+  const [imageStatus, setImageStatus] = useState('');
+
   const {register} = useContext(AuthContext);
 
   const onNextPressed = () => {
@@ -49,9 +61,149 @@ const Registration = ({navigation}) => {
   };
   const onRegistrationPressed = async () => {
     register(name.value, email.value, password.value);
+    saveUsers();
     navigation.navigate('Home');
+    const dataInUsers = firestore().collection('Users').doc(name.value);
+    dataInUsers.set({
+      Name: name.value,
+      Email: email.value,
+      ProfileImage: imageUrl,
+    });
   };
 
+  //   const chooseFile = () => {
+  //     setImageStatus('');
+  //     let options = {
+  //       title: 'Select Image',
+  //       customButtons: [
+  //         {name: 'customOptionKey', title: 'Choose Photo from Custom Option'},
+  //       ],
+  //       storageOptions: {
+  //         skipBackup: true, // do not backup to iCloud
+  //         path: 'images', // store camera images under Pictures/images for android and Documents/images for iOS
+  //       },
+  //     };
+  //     ImagePicker.showImagePicker(options, response => {
+  //       if (response.didCancel) {
+  //         console.log('User cancelled image picker', storage());
+  //       } else if (response.error) {
+  //         console.log('ImagePicker Error: ', response.error);
+  //       } else if (response.customButton) {
+  //         console.log('User tapped custom button: ', response.customButton);
+  //       } else {
+  //         let path = getPlatformPath(response).value;
+  //         console.log('Image Path: ', path);
+  //         let fileName = getFileName(response.fileName, path);
+  //         console.log('File Name: ', fileName);
+  //         setImagePath(path);
+  //         uploadImageToStorage(path, fileName);
+  //       }
+  //     });
+  //   };
+
+  //   const uploadImageToStorage = (path, name) => {
+  //     setLoading(true);
+  //     let reference = storage().ref(name);
+  //     let task = reference.putFile(path);
+  //     task
+  //       .then(() => {
+  //         console.log('Image uploaded to the bucket!');
+  //         setLoading(false);
+  //         setImageStatus('Image uploaded successfully');
+  //       })
+  //       .catch(e => {
+  //         console.log('uploading image error => ', e);
+  //         setLoading(false);
+  //         setImageStatus('Something went wrong');
+  //       });
+  //   };
+
+  //   /**
+  //    * Get platform specific value from response
+  //    */
+  //   const getPlatformPath = ({path, uri}) => {
+  //     return Platform.select({
+  //       android: {value: path},
+  //       ios: {value: uri},
+  //     });
+  //   };
+
+  //   const getPlatformURI = imagePath => {
+  //     let imgSource = imagePath;
+  //     console.log('inside getplatformURI Image Source: ', imgSource);
+  //     if (isNaN(imagePath)) {
+  //       imgSource = {uri: imagePath};
+  //       if (Platform.OS == 'android') {
+  //         imgSource.uri = 'file:///' + imgSource.uri;
+  //       }
+  //     }
+  //     return imgSource;
+  //   };
+
+  //   let imgSource = getPlatformURI(imagePath);
+  //   console.log('Above return Image Source: ', imgSource);
+
+  const choice = () => {
+    Alert.alert('User Choice', 'Choose between the two to upload image', [
+      {
+        text: 'Open Camera',
+        onPress: () => openCamera(),
+      },
+      {
+        text: 'Gallery',
+        onPress: () => openImage(),
+      },
+    ]);
+  };
+
+  const postData = async () => {
+    try {
+      await firestore().collection('UserImg').add({
+        name,
+        email,
+        image:
+          'https://images.unsplash.com/photo-1553179459-4514c0f52f41?ixid=MnwxMjA3fDB8MHxzZWFyY2h8MTB8fHNhbXN1bmclMjBnYWxheHl8ZW58MHx8MHx8&ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
+      });
+      Alert.alert('image Posted');
+    } catch (err) {
+      Alert.alert('Something went wrong.Please try later.');
+    }
+  };
+
+  const openCamera = () => {
+    launchCamera({quality: 0.5}, fileobj => {
+      console.log('opencamera===>', fileobj);
+    });
+  };
+
+  const openImage = () => {
+    launchImageLibrary(
+      {quality: 0.5, selectionLimit: 1, mediaType: 'photo'},
+      fileobj => {
+        console.log('open Library===>', fileobj);
+      },
+    );
+  };
+  const saveUsers = async () => {
+    const submit = await submitUser(Id, name.value, email.value);
+    return submit;
+  };
+  const submitUser = async (Id, name, email) => {
+    let key;
+    Id ? (key = Id) : (key = database().ref().push().key);
+    let dataToSave = {
+      Id: key,
+      Name: name,
+      Email: email,
+    };
+    try {
+      const dataRef = await database().ref('users/' + key);
+      const update = await dataRef.update(dataToSave);
+      return update;
+    } catch (error) {
+      console.log(error);
+    }
+  };
   return (
     <Background src={require('../../assets/Images/AuthBackground.png')}>
       <ScrollView style={styles.container}>
@@ -60,7 +212,9 @@ const Registration = ({navigation}) => {
         </View>
         {isNext ? (
           <View style={styles.uploadImageContainer}>
-            <TouchableOpacity style={styles.uploadImage}>
+            <TouchableOpacity
+              style={styles.uploadImage}
+              onPress={() => choice()}>
               <Camera />
               <Text style={styles.uploadImgText}>Upload Photo</Text>
             </TouchableOpacity>
@@ -207,6 +361,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: Colors.secondary,
+  },
+  uploadImageSource: {
+    width: '80%',
+    height: 300,
   },
   uploadImgText: {
     color: Colors.white,
