@@ -394,6 +394,40 @@ function ActiveProfileIcon(props) {
     </Svg>
   );
 }
+function AddMovie(props) {
+  return (
+    <Svg
+      width={24}
+      height={24}
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      {...props}>
+      <Path d="M13.5 11.25h-3v-3H9v3H6v1.5h3v3h1.5v-3h3v-1.5z" fill="#fff" />
+      <Path
+        d="M15.75 19.5H3A1.502 1.502 0 011.5 18V6A1.502 1.502 0 013 4.5h12.75a1.501 1.501 0 011.5 1.5v3.043l4.064-2.903a.75.75 0 011.186.61v10.5a.75.75 0 01-1.186.61l-4.064-2.902V18a1.502 1.502 0 01-1.5 1.5zM3 6v12h12.75v-4.5a.75.75 0 011.186-.61L21 15.791V8.208l-4.064 2.902a.749.749 0 01-1.186-.61V6H3z"
+        fill="#fff"
+      />
+    </Svg>
+  );
+}
+function BackButton(props) {
+  return (
+    <Svg
+      width={24}
+      height={24}
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      {...props}>
+      <Path
+        d="M15 19l-7-7 7-7"
+        stroke="#fff"
+        strokeWidth={1.5}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Svg>
+  );
+}
 
 export {
   AppLogoLarge,
@@ -417,4 +451,6 @@ export {
   ActiveSaveIcon,
   ProfileIcon,
   ActiveProfileIcon,
+  AddMovie,
+  BackButton,
 };

@@ -187,6 +187,7 @@ dependencies {
     //noinspection GradleDynamicVersion
     implementation "com.facebook.react:react-native:+"
     implementation project(path: ':@react-native-community_checkbox')
+    implementation project(':react-native-config')
     implementation 'com.facebook.android:facebook-android-sdk:[5,6)'
      implementation "androidx.swiperefreshlayout:swiperefreshlayout:1.0.0"
       debugImplementation("com.facebook.flipper:flipper:${FLIPPER_VERSION}") {
@@ -234,7 +235,7 @@ task copyDownloadableDepsToLibs(type: Copy) {
     into 'libs'
 }
 apply from: "../../node_modules/react-native-vector-icons/fonts.gradle"
-
+apply from: project(':react-native-config').projectDir.getPath() + "/dotenv.gradle"
 
 
 

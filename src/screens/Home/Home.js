@@ -12,7 +12,7 @@ import {
 import {SafeAreaView} from 'react-native-safe-area-context';
 
 import Colors from '../../themes/Colors';
-import Button from '../../components/Button/Button';
+
 import {AuthContext} from '../../navigation/AuthProvider';
 import {fonts, sizes} from '../../themes/General';
 import {
@@ -29,13 +29,24 @@ import CategoryIconContainer from '../../components/CategoryIconContainer';
 import {movieData} from '../../helpers/movieData';
 import {hp, wp} from '../../themes/Metrics';
 import Carousel, {Pagination} from 'react-native-snap-carousel';
-import Background from '../../components/Background';
+import firestore from '@react-native-firebase/firestore';
 import OneSignal from 'react-native-onesignal';
+import Config from 'react-native-config';
 
 const Home = ({navigation}) => {
   const {user, logout} = useContext(AuthContext);
   const [index, setIndex] = React.useState(0);
   const isCarousel = React.useRef(null);
+  const [movieList, setMovieList] = React.useState(null);
+  const movieCollectionRef = firestore().collection('movies');
+
+  useEffect(() => {
+    movieCollectionRef.get().then(({docs}) => {
+      setMovieList(docs.map(doc => doc.data()));
+    });
+  }, []);
+
+  console.log('<====== Movie List =======>', movieList);
 
   useEffect(async () => {
     console.log('inside useefecr');
@@ -75,11 +86,13 @@ const Home = ({navigation}) => {
       alert(notification);
     });
   }, []);
-
   const CarouselCardItem = ({item, index}) => {
     return (
       <View style={styles.carouselCardContainer}>
-        <Image source={{uri: item.posterurl}} style={styles.carouselImage} />
+        <Image
+          source={{uri: item.posterImageUrl}}
+          style={styles.carouselImage}
+        />
         <View style={styles.cardContainer}>
           <View style={styles.cardWrapper}>
             <View style={styles.cardContent}>
@@ -89,13 +102,14 @@ const Home = ({navigation}) => {
                 style={styles.cardTitle}>
                 {item.title}
               </Text>
-              <Text style={styles.cardGenre}>{`${
-                item.year
-              } | ${item.genres.join(', ')} `}</Text>
+              <Text
+                style={
+                  styles.cardGenre
+                }>{`${item.year} | ${item.genres} `}</Text>
             </View>
             <View style={styles.ratingContainer}>
               <Rating />
-              <Text style={styles.rating}>{item.imdbRating}</Text>
+              <Text style={styles.rating}>{item.rating}</Text>
             </View>
           </View>
         </View>
@@ -107,7 +121,10 @@ const Home = ({navigation}) => {
     return (
       <View style={styles.movieContainer}>
         <Pressable style={styles.movieImageContainer}>
-          <Image source={{uri: item.posterurl}} style={styles.movieImage} />
+          <Image
+            source={{uri: item.posterImageUrl}}
+            style={styles.movieImage}
+          />
         </Pressable>
         <Pressable style={styles.movieDetailContainer}>
           <Text
@@ -120,7 +137,7 @@ const Home = ({navigation}) => {
             ellipsizeMode="tail"
             numberOfLines={1}
             style={styles.movieGenre}>
-            {item.genres.join(', ')}
+            {item.genre}
           </Text>
         </Pressable>
         <View style={styles.playerIconContainer}>
@@ -129,47 +146,29 @@ const Home = ({navigation}) => {
       </View>
     );
   };
-  return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerText}>Mononton</Text>
-        <View style={styles.headerIcon}>
-          <Pressable
-            style={styles.iconContainer}
-            onPress={() => console.log('Search')}>
-            <SearchIcon />
-          </Pressable>
-          <Pressable
-            style={styles.iconContainer}
-            onPress={() => {
-              logout();
-              navigation.navigate('Login');
-            }}>
-            <ActiveNotificationIcon />
-          </Pressable>
-        </View>
-      </View>
-      <ScrollView nestedScrollEnabled={true}>
+  console.log('ApI Url========>', Config.API_URL);
+
+  const HomeContent = () => {
+    return (
+      <View>
         <View style={{height: hp(28)}}>
           <Carousel
             layout="default"
             layoutCardOffset={9}
             ref={isCarousel}
-            data={movieData}
+            data={movieList}
             renderItem={CarouselCardItem}
             sliderWidth={wp(100)}
             itemWidth={wp(80)}
             inactiveSlideShift={0}
             onSnapToItem={index => setIndex(index)}
-            autoplay
             loop
-            autoplayInterval={3000}
             useScrollView={true}
           />
         </View>
 
         <Pagination
-          dotsLength={movieData.length}
+          dotsLength={movieList.length}
           activeDotIndex={index}
           carouselRef={isCarousel}
           dotStyle={{
@@ -209,16 +208,40 @@ const Home = ({navigation}) => {
             <Text style={styles.seeAllText}>See all</Text>
           </Pressable>
         </View>
+      </View>
+    );
+  };
 
-        <View style={styles.continueWatchList}>
-          <FlatList
-            data={movieData}
-            nestedScrollEnabled
-            renderItem={_renderItem}
-            keyExtractor={(item, index) => item.title.toString()}
-          />
+  const _logOutHandler = () => {
+    logout();
+    navigation.navigate('Login');
+  };
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.headerText}>Mononton</Text>
+        <View style={styles.headerIcon}>
+          <Pressable
+            style={styles.iconContainer}
+            onPress={() => console.log('Search')}>
+            <SearchIcon />
+          </Pressable>
+          <Pressable style={styles.iconContainer} onPress={_logOutHandler}>
+            <ActiveNotificationIcon />
+          </Pressable>
         </View>
-      </ScrollView>
+      </View>
+
+      <View style={styles.continueWatchList}>
+        <FlatList
+          data={movieList}
+          nestedScrollEnabled
+          ListHeaderComponent={() => <HomeContent />}
+          renderItem={_renderItem}
+          keyExtractor={(item, index) => item.title.toString()}
+        />
+      </View>
     </SafeAreaView>
   );
 };
